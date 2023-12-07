@@ -3,8 +3,8 @@
 #include <cmath>
 
 void create_first_matrix(int** matrix,int& target,unsigned M,unsigned N){
-    for (int i=0;i<M;i++){
-        for (int j=0;j<N;j++){
+    for (int i=0;i<N;i++){
+        for (int j=0;j<M;j++){
             matrix[i][j]=(N/M*i+j)*2;
         }
     }
@@ -12,8 +12,8 @@ void create_first_matrix(int** matrix,int& target,unsigned M,unsigned N){
 }
 
 void create_second_matrix(int** matrix,int& target,unsigned M,unsigned N){
-    for (int i=0;i<M;i++){
-        for (int j=0;j<N;j++){
+    for (int i=0;i<N;i++){
+        for (int j=0;j<M;j++){
             matrix[i][j]=(N/M*i*j)*2;
         }
     }
@@ -22,15 +22,15 @@ void create_second_matrix(int** matrix,int& target,unsigned M,unsigned N){
 }
 
 bool second_algorithm(int** matrix,int target,unsigned M,unsigned N){
-    int x=M-1,y=0;
+    int x=0,y=M-1;
     int pointer = matrix[x][y];
-    while (pointer!=target && y<N && x>=0){
+    while (pointer!=target && x<N && y>=0){
         pointer=matrix[x][y];
         if (pointer<target){
-            y++;
+            x++;
         }
         else{
-            x--;
+            y--;
         }
     }
     if (pointer==target){ 
@@ -43,15 +43,15 @@ bool second_algorithm(int** matrix,int target,unsigned M,unsigned N){
     }
 }
 
-int binary_search(int* vector,int l,int r,int target){
-    while (l<r){
-        int point=(l+r)/2;
-        if (vector[point]==target) return point;
-        else if (point<target){
-            l=point+1;
+int bin_search(int** matrix,int y,int left,int right,int target){
+    while (left<right){
+        int mid=(left+right)/2;
+        if (matrix[mid][y]==target) return mid;
+        else if (mid<target){
+            left=mid+1;
         }
         else{
-            r=point-1;
+            right=mid-1;
         }
     }
     return -1;
@@ -59,7 +59,7 @@ int binary_search(int* vector,int l,int r,int target){
 
 void first_algorithm(int** matrix,int target,unsigned M,unsigned N){
     for (int i =0;i<M;i++){
-        int ans = binary_search(matrix[i],0,N-1,target);
+        int ans = bin_search(matrix,i,0,N-1,target);
         if (ans!=-1){
             std::cout << "Target found in " << i << "column and "<< ans << " string"<<  std::endl;
             return;
@@ -68,33 +68,31 @@ void first_algorithm(int** matrix,int target,unsigned M,unsigned N){
     std::cout << "No target\n";
 }
 
-int exponential_search(int* vector, int start,int end,int target){
-    int check=start;
-    while (vector[check]<target && check <= end){
-        for (int i =0;i<13;i++){
-            check+=pow(2,i);
-            if (check>end) break;
-            if (vector[check]>target){
-                end = check;
-                break;
+int exponential_search(int** matrix,int y,int end,int target){
+    int k=1,x=0;
+    while (matrix[x][y]<target && x <= end){
+        x+=k;
+        k*=2;
+        if (x>end) return bin_search(matrix,y,x=x-(k/2),end,target);
+        else{
+            if (matrix[x][y]>target){
+            return bin_search(matrix,y,x=x-(k/2),x-1,target);
             }
-            start=check;
         }
     }
-    return binary_search(vector,start,end,target);
     
 
 }
 
 void third_algorithm(int** matrix,unsigned M,unsigned N,int target){
-    int x=M-1,y=0;
-    while (x>=0){
+    int y=M-1,x=0;
+    while (y>=0){
         if (matrix[x][y]>target){
-            x--;
+            y--;
         }
         else{
-            y = exponential_search(matrix[x],0,N-1,target);
-            if (y==-1){ 
+            x = exponential_search(matrix,y,N-1,target);
+            if (x==-1){ 
                 std::cout << "No target" << std::endl;
                 return;
             }
@@ -112,11 +110,13 @@ void check_time(int** matrix,int target,unsigned M,unsigned N,int mode){
     auto end_time = std::chrono::steady_clock::now();
     auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
     std::cout <<"Time of work of first algo on "<< mode <<" data is equal " <<elapsed_ns.count() << " ns\n";
+    
     start_time = std::chrono::steady_clock::now();
     second_algorithm(matrix,target,M,N);
     end_time = std::chrono::steady_clock::now();
     elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
     std::cout <<"Time of work of second algo on "<< mode <<" data is equal " <<elapsed_ns.count() << " ns\n";
+
     start_time = std::chrono::steady_clock::now();
     third_algorithm(matrix,M,N,target);
     end_time = std::chrono::steady_clock::now();
@@ -125,26 +125,22 @@ void check_time(int** matrix,int target,unsigned M,unsigned N,int mode){
 }
 
 int main(){
-    int x=14;
+    int x=-1;
     while (x>=14 || x<0){
         std::cout << "Введите степень двойки для задания параметра М матрицы(неотрицательное, меньше 14): ";
         std::cin>>x;
     }
     unsigned N =pow(2,13),M=pow(2,x);
-    int ** matrix = new int*[M];
-    for (int i =0;i<M;i++){
-        matrix[i]=new int[N];
+    int ** matrix = new int*[N];
+    for (int i =0;i<N;i++){
+        matrix[i]=new int[M];
     }
     int target;
-    for (int x=0;x<14;x++){
-        M=pow(2,x);
-        std::cout << x << std::endl;
-        create_first_matrix(matrix,target,M,N);
-        check_time(matrix,target,M,N,1);
-        create_second_matrix(matrix,target,M,N);
-        check_time(matrix,target,M,N,2);
-    }
-    for (int i=0;i<pow(2,13);i++){
+    create_first_matrix(matrix,target,M,N);
+    check_time(matrix,target,M,N,1);
+    create_second_matrix(matrix,target,M,N);
+    check_time(matrix,target,M,N,2);
+    for (int i=0;i<N;i++){
         delete [] matrix[i];
     }
     delete [] matrix;
